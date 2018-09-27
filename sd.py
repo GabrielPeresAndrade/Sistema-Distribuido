@@ -26,13 +26,14 @@ def main():
         #teste
     while(fila.empty()!= True):
         print ('',fila.get_nowait())
-    
+    time.sleep(4);
 
 def falar():
 
     HOST1 = '225.0.0.250'
     PORT = 8888
     global clock
+    global fila
     print('{} # vou comecar a falar\n'.format(os.getpid()))
 
 
