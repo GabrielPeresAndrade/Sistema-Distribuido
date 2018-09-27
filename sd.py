@@ -27,7 +27,7 @@ def falar():
 
     HOST1 = '225.0.0.250'
     PORT = 8888
-
+    global clock
     print('{} # vou comecar a falar\n'.format(os.getpid()))
 
 
@@ -35,17 +35,23 @@ def falar():
     sf = socket.socket(socket.AF_INET, socket.SOCK_DGRAM);
     ttl = struct.pack('b', 1)
     sf.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL,ttl)
-    c='{} diz handshack'.format(os.getpid())
+    #c='{} diz handshack'.format(os.getpid())
+    c=('clock = %d PID =%d'% (clock,os.getpid()))
+    clock = clock +1;
+    sf.sendto(c.encode(),(HOST1,PORT))    
+    c=('clock = %d PID =%d'% (clock,os.getpid()))
+    clock = clock +1;
     sf.sendto(c.encode(),(HOST1,PORT))    
     print('{} # parei de falar\n'.format(os.getpid()));
-    #time.sleep(2);
+    time.sleep(2);
 
 def ouvir():
 
     HOST = ''
     PORT = 8888
-
+    global clock
     print('{} # vou comecar a ouvir\n'.format(os.getpid()));
+
     addrinfo = socket.getaddrinfo('225.0.0.250', None)[0]
     sl = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sl.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
@@ -57,12 +63,17 @@ def ouvir():
     while 1:
         print('{} # ouvindo\n'.format(os.getpid()));
         data, addr = sl.recvfrom(1024); 
-        print ('Connected with %s PID: %d\n' % (addr,os.getpid())); 
         print ("received message:", data.decode())
-        #fazer ack
-        c='ack'
-        sl.sendto(c.encode(),(addr[0],PORT))
+        if (data.decode()[0]!='a'): #diferente de ACK
+            if (int(data.decode()[8])>=clock):
+                clock=int(data.decode()[8])+1
+            print ('Connected with %s PID: %d\n' % (addr,os.getpid())); 
+            c='ack'
+            sl.sendto(c.encode(),('225.0.0.250',PORT))
+        else:
+            #guardar de quem foi o ack para contar
     sl.close()
 
+clock = 0;
 if __name__ == "__main__":
     comeco()
