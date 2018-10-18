@@ -13,14 +13,14 @@ def comeco():
     main();
 
 def main():
-    time.sleep(2);
+    #time.sleep(2);
     fila=[(9999,-1,-1),(9999,-1,-1),(9999,-1,-1),(9999,-1,-1),(9999,-1,-1),(9999,-1,-1),(9999,-1,-1),(9999,-1,-1),(9999,-1,-1),(9999,-1,-1),(9999,-1,-1)]
     ordena(fila)
     print('O MEU PID :{}\n'.format(os.getpid()));
     #OUVIR
     t_ouvir = threading.Thread(target=ouvir,args=(fila,2));
     t_ouvir.start();
-    time.sleep(2);
+    time.sleep(3);
     #FALAR
     falar(fila)
 
@@ -36,15 +36,15 @@ def falar(fila):
     sf = socket.socket(socket.AF_INET, socket.SOCK_DGRAM);
     ttl = struct.pack('b', 1)
     sf.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL,ttl)
-    
+
 
     c=('clock = %d PID =%d'% (clock,os.getpid()))
     a =(clock,os.getpid(),0)
     clock = clock +1;
     sf.sendto(c.encode(),(HOST1,PORT))
-    fila[0]=a
+    fila[10]=a
     ordena(fila)
-    
+
     time.sleep(2);
 
 
@@ -64,12 +64,18 @@ def ouvir(fila,t):
     sl.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
     while 1:
-        data, addr = sl.recvfrom(1024); 
+        data, addr = sl.recvfrom(1024);
         print ("recebi a mesnagem:", data.decode())
         if (data.decode()[0]!='a'): #diferente de ACK
-            if (int(data.decode()[8])>=clock):
+            if (int(data.decode()[8])>=clock): #muda o clock se achar um maior
                 clock=int(data.decode()[8])+1
-            print ('Conectado com %s PID: %d\n' % (addr,os.getpid())); 
+            #colocando mensagem na fila
+            if (int((data[15:].decode()))!=os.getpid()):
+                tupla_nova=(int(data.decode()[8]),int((data[15:].decode())),0)
+                fila[10]=tupla_nova
+                ordena(fila)
+            #mandando ack
+            print ('Conectado com %s PID: %d\n' % (addr,os.getpid()));
             c = ('ack %d'% int((data[15:].decode())))
             sl.sendto(c.encode(),('225.0.0.250',PORT))
         else:
@@ -120,4 +126,3 @@ clock = 0;
 
 if __name__ == "__main__":
     main()
-
